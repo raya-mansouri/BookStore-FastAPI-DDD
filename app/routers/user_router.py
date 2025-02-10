@@ -16,12 +16,13 @@ class UserSchema(BaseModel):
     username: str
     first_name: str
     last_name: str
+    password: str
     phone: str
     email: str
     role: str
-    is_active: bool = True
+    is_active: bool = False
 
 @router.post("/users")
 async def create_user(user_data: UserSchema, db: AsyncSession = Depends(get_db)):
-    user_entity = User(**user_data.model_dump(exclude_unset=True))
+    user_entity = User(**user_data.model_dump())
     return await UserRepository.create_user(db, user_entity)

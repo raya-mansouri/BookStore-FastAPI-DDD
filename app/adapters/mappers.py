@@ -10,32 +10,38 @@ from app.domain.user.entities import Author, City, Customer, User
 
 # Define the mapping manually
 def start_mappers(mapper_registry):
-    mapper_registry.map_imperatively(User, user_table, properties={
-        "author": relationship(Author, back_populates="user", uselist=False),
-        "customer": relationship(Customer, back_populates="user", uselist=False),
-    })
+    mapper_registry.map_imperatively(
+        User, user_table,
+        properties={
+            "author": relationship(Author, back_populates="user", uselist=False, cascade="all, delete-orphan"),
+            "customer": relationship(Customer, back_populates="user", uselist=False, cascade="all, delete-orphan"),
+        }
+    )
     mapper_registry.map_imperatively(City, city_table)
     mapper_registry.map_imperatively(
         Author, author_table,
-        properties={"user": relationship(User, back_populates="author")}
+        properties={
+            "user": relationship(User, back_populates="author", uselist=False, cascade="all, delete-orphan"),
+            "city": relationship(City, backref="city", uselist=False)
+        }
     )
     mapper_registry.map_imperatively(
         Customer, customer_table,
-        properties={"user": relationship(User, back_populates="customer")}
+        properties={"user": relationship(User, back_populates="customer", uselist=False, cascade="all, delete-orphan")}
     )
     mapper_registry.map_imperatively(Genre, genre_table)
     mapper_registry.map_imperatively(
         Book, book_table,
         properties={
             "genre": relationship(Genre, backref="books"),
-            "authors": relationship(Author, secondary=book_author_table, backref="books")
+            "authors": relationship(Author, secondary=book_author_table, backref="books", cascade="all, delete"),
         }
     )
     mapper_registry.map_imperatively(
         Reservation, reservation_table,
         properties={
-            "customer": relationship(Customer, back_populates="reservations"),
-            "book": relationship(Book, back_populates="reservations")
+            "customer": relationship(Customer, backref="reservations", cascade="all, delete"),
+            "book": relationship(Book, backref="reservations", cascade="all, delete"),
         }
     )
 

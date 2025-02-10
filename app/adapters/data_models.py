@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Numeric, Enum, DateTime, Table
+from sqlalchemy import Column, String, Integer, ForeignKey, Numeric, Enum, DateTime, Table, Boolean
 from app.db.base import metadata
 
 # Define tables
@@ -12,7 +12,7 @@ user_table = Table(
     Column("email", String(100), unique=True, nullable=False),
     Column("password", String(255), nullable=False),
     Column("role", Enum("admin", "customer", "author", name="user_roles"), nullable=False),
-    Column("is_active", Integer, default=1, nullable=False)
+    Column("is_active", Boolean, default=False, nullable=False)
 )
 
 city_table = Table(
@@ -42,7 +42,7 @@ customer_table = Table(
     Column("user_id", Integer, ForeignKey("user.id"), unique=True, nullable=False),
     Column("subscription_model", Enum("free", "plus", "premium", name="subscription_models"), nullable=False),
     Column("subscription_end_time", DateTime),
-    Column("wallet_money_amount", Numeric(10, 2), default=0, nullable=False)
+    Column("wallet_money_amount", Integer, default=0, nullable=False)
 )
 
 book_table = Table(

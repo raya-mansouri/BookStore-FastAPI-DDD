@@ -1,7 +1,4 @@
-from pydantic import BaseModel
-from uuid import UUID, uuid4
-
-class User(BaseModel):
+class User:
     id: int
     username: str
     first_name: str
@@ -9,28 +6,8 @@ class User(BaseModel):
     phone: str
     email: str
     role: str
-    is_active: int
-
-    def __init__(
-        self,
-        username: str = "",
-        first_name: str = "",
-        last_name: str = "",
-        phone: str = "",
-        email: str = "",
-        role: str = "",
-        is_active: int = 1,
-    ):
-        super().__init__(
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            phone=phone,
-            email=email,
-            role=role,
-            is_active=is_active,
-        )
-
+    password: str
+    is_active: bool
 
     def __str__(self, username: str):
         self.username = username
@@ -44,24 +21,21 @@ class User(BaseModel):
         self.username = username
 
 
-class City(BaseModel):
+class City:
     id: int
     name: str
-
-    def __init__(self, name: str):
-        self.name = name
 
     def __str__(self):
         return self.name
 
-class Author(BaseModel):
+class Author:
     id: int
     user_id: int
     city_id: int
     goodreads_link: str
     bank_account_number: str
 
-class Customer(BaseModel):
+class Customer:
     id: int
     user_id: int
     subscription_model: str

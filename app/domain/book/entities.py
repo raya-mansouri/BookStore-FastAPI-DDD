@@ -1,11 +1,11 @@
 from pydantic import BaseModel
 from typing import List
 
-class Genre(BaseModel):
+class Genre:
     id: int
     name: str
 
-class Book(BaseModel):
+class Book:
     id: int
     title: str
     isbn: str
