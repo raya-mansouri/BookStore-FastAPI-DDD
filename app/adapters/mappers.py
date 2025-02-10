@@ -21,13 +21,13 @@ def start_mappers(mapper_registry):
     mapper_registry.map_imperatively(
         Author, author_table,
         properties={
-            "user": relationship(User, back_populates="author", uselist=False, cascade="all, delete-orphan"),
+            "user": relationship(User, back_populates="author", uselist=False),
             "city": relationship(City, backref="city", uselist=False)
         }
     )
     mapper_registry.map_imperatively(
         Customer, customer_table,
-        properties={"user": relationship(User, back_populates="customer", uselist=False, cascade="all, delete-orphan")}
+        properties={"user": relationship(User, back_populates="customer", uselist=False)}
     )
     mapper_registry.map_imperatively(Genre, genre_table)
     mapper_registry.map_imperatively(
