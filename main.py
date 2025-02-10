@@ -1,13 +1,15 @@
 from fastapi import FastAPI
 from app.adapters.mappers import start_mappers
 from app.db.base import mapper_registry
-from app.routers.user_router import router
-
+from app.routers.user_router import router as user_router
+from app.routers.customer_router import router as customer_router
 
 start_mappers(mapper_registry)
 
 app = FastAPI()
-app.include_router(router, prefix="/api")
+
+app.include_router(user_router, prefix="/api")
+app.include_router(customer_router, prefix="/customers", tags=["Customers"])
 
 if __name__ == "__main__":
     import uvicorn
