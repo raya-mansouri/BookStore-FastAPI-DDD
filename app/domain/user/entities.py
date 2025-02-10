@@ -9,11 +9,28 @@ class User(BaseModel):
     phone: str
     email: str
     role: str
-    is_active: bool
+    is_active: int
 
-    def __init__(self, id: UUID | None = None, username: str = ""):
-        self.id = id or uuid4()
-        self.name = username
+    def __init__(
+        self,
+        username: str = "",
+        first_name: str = "",
+        last_name: str = "",
+        phone: str = "",
+        email: str = "",
+        role: str = "",
+        is_active: int = 1,
+    ):
+        super().__init__(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            phone=phone,
+            email=email,
+            role=role,
+            is_active=is_active,
+        )
+
 
     def __str__(self, username: str):
         self.username = username

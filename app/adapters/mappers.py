@@ -9,7 +9,7 @@ from app.domain.user.entities import Author, City, Customer, User
 
 
 # Define the mapping manually
-def start_mappers():
+def start_mappers(mapper_registry):
     mapper_registry.map_imperatively(User, user_table, properties={
         "author": relationship(Author, back_populates="user", uselist=False),
         "customer": relationship(Customer, back_populates="user", uselist=False),
