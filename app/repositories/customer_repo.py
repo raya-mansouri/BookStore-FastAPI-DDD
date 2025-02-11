@@ -3,12 +3,13 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.user.entities import Customer
+from app.repositories.abstract_repo import AbstractRepository
 from app.schemas.customer_schema import CustomerCreate, CustomerUpdate
 from app.exceptions import InvalidFieldError, NotFoundException
 
-class CustomerRepository:
+class CustomerRepository(AbstractRepository[Customer]):
     def __init__(self, db: AsyncSession):
-        self.db = db
+        super().__init__(db, Customer)
 
     async def create_item(self, customer_data: CustomerCreate) -> Optional[Customer]:
         try:
@@ -23,10 +24,6 @@ class CustomerRepository:
     async def get_item(self, id: int) -> Optional[Customer]:
         result = await self.db.execute(select(Customer).where(Customer.id == id))
         return result.scalar()
-
-    async def get_all(self) -> List[Customer]:
-        result = await self.db.execute(select(Customer))
-        return result.scalars().all()
 
     async def update_item(self, id: int, customer_data: CustomerUpdate) -> Optional[Customer]:
         try:

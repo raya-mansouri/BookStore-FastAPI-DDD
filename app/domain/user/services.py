@@ -32,7 +32,7 @@ class CustomerService:
     async def get_items(self, uow: UnitOfWork) -> List[Customer]:
         async with uow:
             repo = uow.get_repository(CustomerRepository)
-            return await repo.get_all()
+            return await repo.list()
 
     async def update_item(self, id: int, customer_data: CustomerUpdate, uow: UnitOfWork):
         async with uow:
