@@ -8,7 +8,7 @@ start_mappers(mapper_registry)
 
 app = FastAPI()
 
-app.include_router(user_router, prefix="/api")
+app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(customer_router, prefix="/customers", tags=["Customers"])
 
 if __name__ == "__main__":

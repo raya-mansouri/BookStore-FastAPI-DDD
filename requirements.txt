@@ -8,4 +8,11 @@ uvicorn
 asyncpg 
 psycopg2-binary
 greenlet
-
+'pydantic[email]'
+pytz
+redis
+jose
+'passlib[bcrypt]'
+Crypto
+pycryptodome
+"python-jose[cryptography]"
