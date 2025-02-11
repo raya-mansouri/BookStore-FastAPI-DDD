@@ -49,7 +49,7 @@ class Customer:
         if not isinstance(user_id, int) or user_id <= 0:
             raise InvalidFieldError("User ID must be a positive integer.")
         
-        if self.subscription_model not in SubscriptionModel:
+        if subscription_model not in SubscriptionModel:
             raise InvalidFieldError("subscription_model must be one of: 'free', 'plus', 'premium'.")
         
         if not isinstance(wallet_money_amount, int) or wallet_money_amount < 0:

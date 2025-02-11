@@ -18,7 +18,7 @@ class CustomerRepository:
             await self.db.refresh(new_customer)
             return new_customer
         except InvalidFieldError as e:
-            raise ValueError(f"Customer creation failed: {e}")
+            raise InvalidFieldError(f"Customer creation failed: {e}")
 
     async def get_item(self, id: int) -> Optional[Customer]:
         result = await self.db.execute(select(Customer).where(Customer.id == id))
@@ -39,7 +39,7 @@ class CustomerRepository:
             await self.db.refresh(current_customer)
             return current_customer
         except InvalidFieldError as e:
-            raise ValueError(f"Customer update failed: {e}")
+            raise InvalidFieldError(f"Customer update failed: {e}")
 
     async def delete_item(self, id: int) -> bool:
         customer = await self.get_item(id)
