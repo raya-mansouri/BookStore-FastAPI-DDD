@@ -27,21 +27,24 @@ def start_mappers(mapper_registry):
     )
     mapper_registry.map_imperatively(
         Customer, customer_table,
-        properties={"user": relationship(User, back_populates="customer", uselist=False)}
+        properties={
+            "user": relationship(User, back_populates="customer", uselist=False),
+            "reservations": relationship(Reservation, back_populates="customer", cascade="all, delete-orphan")
+        }
     )
     mapper_registry.map_imperatively(Genre, genre_table)
     mapper_registry.map_imperatively(
         Book, book_table,
         properties={
             "genre": relationship(Genre, backref="books"),
-            "authors": relationship(Author, secondary=book_author_table, backref="books", cascade="all, delete"),
+            "authors": relationship(Author, secondary=book_author_table, backref="books"),
         }
     )
     mapper_registry.map_imperatively(
         Reservation, reservation_table,
         properties={
-            "customer": relationship(Customer, backref="reservations", cascade="all, delete"),
-            "book": relationship(Book, backref="reservations", cascade="all, delete"),
+            "customer": relationship(Customer, back_populates="reservations"),
+            "book": relationship(Book, backref="reservations"),
         }
     )
 

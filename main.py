@@ -3,6 +3,8 @@ from app.adapters.mappers import start_mappers
 from app.db.base import mapper_registry
 from app.routers.user_router import router as user_router
 from app.routers.customer_router import router as customer_router
+from app.routers.book_router import router as book_router
+
 
 start_mappers(mapper_registry)
 
@@ -10,6 +12,8 @@ app = FastAPI()
 
 app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(customer_router, prefix="/customers", tags=["Customers"])
+app.include_router(book_router, prefix="/books", tags=["Books"])
+
 
 if __name__ == "__main__":
     import uvicorn
