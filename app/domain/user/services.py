@@ -27,7 +27,7 @@ class CustomerService:
     async def get_item(self, id: int, uow: UnitOfWork) -> Customer:
         async with uow:
             repo = uow.get_repository(CustomerRepository)
-            return await repo.get_item(id) 
+            return await repo.get(id)
     
     async def get_items(self, uow: UnitOfWork) -> List[Customer]:
         async with uow:
@@ -48,6 +48,33 @@ class CustomerService:
             deleted_customer = await repo.delete_item(id)
             await uow.commit()
             return deleted_customer
+
+    async def charge_wallet(self, user_id: int, amount: int, uow: UnitOfWork) -> Customer:
+        async with uow:
+            repo = uow.get_repository(CustomerRepository)
+            customer = await repo.get_by_user_id(user_id) 
+            if not customer:
+                raise HTTPException(status_code=404, detail="Customer not found")
+            customer.charge_wallet(amount)
+            await uow.commit()
+            return customer
+
+    async def upgrade_subscription(self, user_id: int, subscription_model: str, uow: UnitOfWork) -> Customer:
+        async with uow:
+
+            try:
+                repo = uow.get_repository(CustomerRepository)
+                customer = await repo.get_by_user_id(user_id) 
+
+                if not customer:
+                    raise HTTPException(status_code=404, detail="Customer not found")
+                
+                customer.upgrade_subscription(subscription_model)
+                await uow.commit()
+                return customer            
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
 
 
 class AuthService:

@@ -1,8 +1,10 @@
+import pytz
 from typing import Optional
+from datetime import datetime, timedelta
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from fastapi import HTTPException
 from app.domain.user.object_values import SubscriptionModel, UserRole
 from app.exceptions import InvalidFieldError
-from pydantic import BaseModel, EmailStr, Field, field_validator
-from datetime import datetime
 
 
 class User:
@@ -46,7 +48,14 @@ class Customer:
     id: int
     user_id: int
     subscription_model: str
+    subscription_end_time: datetime
     wallet_money_amount: int
+
+    def __init__(self, user_id: int, subscription_model: str,subscription_end_time: datetime, wallet_money_amount: int):
+        self.user_id = user_id
+        self.subscription_model = subscription_model
+        subscription_end_time = subscription_end_time
+        self.wallet_money_amount = wallet_money_amount
 
     def __validate(self, id: int, user_id: int, subscription_model: str, wallet_money_amount: int):
         if not isinstance(user_id, int) or user_id <= 0:
@@ -87,6 +96,34 @@ class Customer:
         if not isinstance(other, Customer):
             return False
         return self.id == other.id
+    
+    def charge_wallet(self, amount: int):
+        """Increase the wallet balance by the given amount."""
+        self.wallet_money_amount += amount
+
+    def upgrade_subscription(self, new_model: str):
+        pre_wallet_amount = self.wallet_money_amount
+        pre_subscription_model = self.subscription_model
+        iran_timezone = pytz.timezone('Asia/Tehran')
+        now = datetime.now(iran_timezone)
+
+        cost_mapping = {
+            ("free", "plus"): 50000,
+            ("plus", "premium"): 150000,
+            ("free", "premium"): 200000
+        }
+        duration = timedelta(days=30)  # Both "plus" and "premium" last for 1 month
+
+        cost = cost_mapping.get((pre_subscription_model, new_model))
+        if cost is None:
+            raise ValueError("Invalid subscription upgrade path")
+
+        if pre_wallet_amount < cost:
+            raise HTTPException(status_code=400, detail="Insufficient wallet balance")
+
+        self.wallet_money_amount -= cost
+        self.subscription_model = new_model
+        self.subscription_end_time = now + duration
     
 
 class UserBase(BaseModel):

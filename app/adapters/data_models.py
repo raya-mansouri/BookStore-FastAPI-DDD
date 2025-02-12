@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Numeric, Enum, DateTime, Table, Boolean
+from sqlalchemy.sql import func
 from app.db.base import metadata
 
 # Define tables
@@ -41,7 +42,7 @@ customer_table = Table(
     Column("id", Integer, primary_key=True, index=True),
     Column("user_id", Integer, ForeignKey("user.id"), unique=True, nullable=False),
     Column("subscription_model", Enum("free", "plus", "premium", name="subscription_models"), nullable=False),
-    Column("subscription_end_time", DateTime),
+    Column("subscription_end_time", DateTime(timezone=True), server_default=func.now()),
     Column("wallet_money_amount", Integer, default=0, nullable=False)
 )
 
