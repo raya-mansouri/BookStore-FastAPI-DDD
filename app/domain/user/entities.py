@@ -125,6 +125,9 @@ class Customer:
         self.subscription_model = new_model
         self.subscription_end_time = now + duration
     
+    def deduct_from_wallet(self, amount):
+        self.wallet_money_amount -= amount
+    
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, example="john_doe", description="Unique username for login")

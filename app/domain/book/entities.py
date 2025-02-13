@@ -16,6 +16,24 @@ class Book:
     reserved_units: int
     authors: List[int]
 
+    def __init__(self, title: str, isbn: str, price: int, genre_id: int, units: int, description: str, reserved_units: int, authors: List[int]):
+        self.title = title
+        self.isbn = isbn
+        self.price = price
+        self.genre_id = genre_id
+        self.units = units
+        self.description = description
+        self.reserved_units = reserved_units
+        self.authors = authors
+
+    def cancel_reservation(self):
+        self.reserved_units -= 1
+
+    def reserve_book(self):
+        self.reserved_units += 1
+
+
+
 class BookBase(BaseModel):
     """
     Base schema for book-related models.

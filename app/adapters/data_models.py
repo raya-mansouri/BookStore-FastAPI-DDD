@@ -63,8 +63,8 @@ reservation_table = Table(
     Column("id", Integer, primary_key=True, index=True),
     Column("customer_id", Integer, ForeignKey("customer.id"), nullable=False),
     Column("book_id", Integer, ForeignKey("book.id"), nullable=False),
-    Column("start_of_reservation", DateTime, nullable=False),
-    Column("end_of_reservation", DateTime, nullable=False),
+    Column("start_of_reservation", DateTime(timezone=True), server_default=func.now(), nullable=False),
+    Column("end_of_reservation", DateTime(timezone=True), server_default=func.now(), nullable=False),
     Column("price", Integer, nullable=False),
     Column("status", Enum("pending", "active", "completed", name="reservation_status"), default="pending"),
     Column("queue_position", Integer, nullable=True)

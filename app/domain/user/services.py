@@ -98,7 +98,7 @@ class AuthService:
             repo = uow.get_repository(AuthRepository)
             user = await repo.get_by_username(username)
             if not user or not verify_password(password, user.password):
-                return None
+                raise HTTPException(status_code=404, detail="User not found")
             return user
 
     async def login_step1(self, credentials: LoginStep1Request, uow: UnitOfWork):
