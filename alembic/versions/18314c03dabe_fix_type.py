@@ -25,9 +25,9 @@ def upgrade() -> None:
                type_=sa.Integer(),
                existing_nullable=False)
     op.alter_column('user', 'is_active',
-               existing_type=sa.INTEGER(),
-               type_=sa.Boolean(),
-               existing_nullable=False)
+                    existing_type=sa.INTEGER(),
+                    type_=sa.Boolean(),
+                    postgresql_using='is_active::boolean')
     # ### end Alembic commands ###
 
 

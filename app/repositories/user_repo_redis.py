@@ -8,7 +8,7 @@ class AuthRepositoryRedis:
         self.redis = redis.Redis(
             host=settings.REDIS_HOST, 
             port=settings.REDIS_PORT, 
-            db=settings.REDIS_DB
+            db=settings.REDIS_DB0
         )
 
     async def generate_otp(self, user_id: int) -> str:

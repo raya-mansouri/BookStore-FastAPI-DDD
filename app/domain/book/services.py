@@ -23,6 +23,7 @@ class BookService:
             genre_id=book_data.genre_id,
             description=book_data.description,
             units=book_data.units,
+            reserved_units=0,
             authors=authors
         )
         await repo.add(book_data)
