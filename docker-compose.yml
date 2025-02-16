@@ -16,6 +16,21 @@ services:
     networks:
       - app-network
 
+  rabbitmq:
+    image: "rabbitmq:management"
+    container_name: rabbitmq
+    env_file: .env
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    ports:
+      - "15672:15672"  # RabbitMQ Web UI
+      - "5672:5672"    # RabbitMQ AMQP port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+
   redis:
     image: redis:latest
     container_name: redis_db
@@ -77,6 +92,8 @@ volumes:
   redis_data:
   mongodb_data:
   redisinsight_data:
+  rabbitmq_data:
+
 
 
 networks:

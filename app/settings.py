@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     MONGO_USER: str = "raya"
     MONGO_PASSWORD: int = 1234
 
+    RABBITMQ_USER: str = "guest"
+    RABBITMQ_PASSWORD: str = "guest"
+
     DEBUG: bool = False
 
     class Config:

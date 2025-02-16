@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from datetime import datetime, timedelta
 import redis, pytz
+from app.infrastructure.messaging.rabbitmq import publish_event
 from app.settings import settings
 from app.db.unit_of_work import UnitOfWork
 from app.domain.book.entities import Book
@@ -41,15 +42,15 @@ class ReservationService:
     async def has_read_more_than_3_books(self, customer_id):
         repo = self.uow.get_repository(ReservationRepository)
         result = await repo.has_read_more_than_3_books(customer_id)
-        if not result:
-            raise HTTPException(status_code=404, detail="No result")
+        # if not result:
+        #     raise HTTPException(status_code=404, detail="No result for has_read_more_than_3_books")
         return result
 
     async def has_paid_more_than_300k(self, customer_id):
         repo = self.uow.get_repository(ReservationRepository)
         result = await repo.has_paid_more_than_300k(customer_id)
-        if not result:
-            raise HTTPException(status_code=404, detail="No result")
+        # if not result:
+        #     raise HTTPException(status_code=404, detail="No result for has_paid_more_than_300k")
         return result
 
     async def check_funds(self, customer, days):
@@ -68,11 +69,11 @@ class ReservationService:
             raise HTTPException(status_code=402, detail=f"Not enough balance. Please recharge. Redirect to: {charge_wallet_url}")
             # return RedirectResponse(url=charge_wallet_url)
 
-    async def has_paid_more_than_300k(self, customer_id):
+    async def count_active_reservations(self, customer_id):
         repo = self.uow.get_repository(ReservationRepository)
         result = await repo.count_active_reservations(customer_id)
-        if not result:
-            raise HTTPException(status_code=404, detail="No result")
+        # if not result:
+        #     raise HTTPException(status_code=404, detail="No result for count_active_reservations")
         return result
     
     async def validate_reservation(self, customer, days):
@@ -104,7 +105,7 @@ class ReservationService:
             await self.uow.flush()
             return await self.instant_reserve(customer, book, days)
         await self.uow.flush()
-        return await self.queue_reserve(customer, book)
+        return await self.queue_reserve(customer, book, days)
     
     async def instant_reserve(self, customer, book, days):
         await self.validate_reservation(customer, days)
@@ -131,7 +132,7 @@ class ReservationService:
 
         # return reservation
 
-    async def queue_reserve(self, customer, book):
+    async def queue_reserve(self, customer, book, days):
         # Add to Redis queue
         queue_key = f"reservation_queue:{book.id}"
         priority = 0 if customer.subscription_model == "premium" else (1 if customer.subscription_model == "plus" else 3)
@@ -145,7 +146,7 @@ class ReservationService:
     )
     
     async def process_queue(self, customer, book, days):
-        queue_key = f"reservation_queue:{self.book.id}"
+        queue_key = f"reservation_queue:{book.id}"
         next_customer_id = redis_client.zrange(queue_key, 0, 0, withscores=True)
         if next_customer_id:
             next_customer_id = int(next_customer_id[0][0])
@@ -157,18 +158,18 @@ class ReservationService:
             total_cost = days * daily_rate
             if next_customer.wallet_money_amount >= total_cost:
                 redis_client.zrem(queue_key, next_customer_id)
-                return self.instant_reserve()
+                return self.instant_reserve(next_customer, book, days)
             else:
                 # Remove customer from queue if they don't have enough funds
                 redis_client.zrem(queue_key, next_customer_id)
-                return self.process_queue(customer, book)
+                return self.process_queue(customer, book, days)
         return {"message": "No customers in the queue"}
 
     async def get_reservation_by_id_and_customer(self, reservation_id, customer_id, uow):
         repo = uow.get_repository(ReservationRepository)
         result = await repo.get_reservation_by_id_and_customer(reservation_id, customer_id)
         if not result:
-            raise HTTPException(status_code=404, detail="No reservation with that id")
+            raise HTTPException(status_code=404, detail="No reservation with that id for get_reservation_by_id_and_customer")
         return result
 
     async def cancel_reservation(self, user_id, reservation_id: int, uow: UnitOfWork):
@@ -192,11 +193,12 @@ class ReservationService:
         book_id = reservation.book_id
         book = await self._get_book(book_id)
         book.cancel_reservation()
-
-        # Update reservation status
         
         repo = uow.get_repository(ReservationRepository)
         await repo.remove(reservation_value)
+
+        # Publish event to RabbitMQ
+        publish_event({"event_type": "reservation_cancelled", "book_id": book_id, "customer_id": customer_id})
         
         await uow.flush()
         await uow.refresh(customer)
