@@ -2,14 +2,20 @@ from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from datetime import datetime, timedelta
 import redis, pytz
+from app.settings import settings
 from app.db.unit_of_work import UnitOfWork
+from app.domain.book.entities import Book
 from app.domain.reservation.entities import QueueResponseSchema, Reservation
 from app.domain.user.entities import Customer
 from app.repositories.book_repo import BookRepository
 from app.repositories.customer_repo import CustomerRepository
 from app.repositories.reservation_repo import ReservationRepository
 
-redis_client = redis.Redis(host='localhost', port=6379, db=1)
+redis_client = redis.Redis(
+            host=settings.REDIS_HOST, 
+            port=settings.REDIS_PORT, 
+            db=settings.REDIS_DB1
+        )
 iran_timezone = pytz.timezone("Asia/Tehran")
 now = datetime.now(iran_timezone)
 
@@ -70,17 +76,19 @@ class ReservationService:
         return result
     
     async def validate_reservation(self, customer, days):
+        print(1)
         if customer.subscription_model == "free":
-            raise HTTPException("Free users cannot reserve books")
+            print(2)
+            raise HTTPException(status_code=403, detail="Free users cannot reserve books")
         
         max_days = 14 if customer.subscription_model == "premium" else 7
-        if self.days > max_days:
-            raise HTTPException("Exceeding reservation limit for subscription tier")
+        if days > max_days:
+            raise HTTPException(status_code=403, detail="Exceeding reservation limit for subscription tier")
         
         max_units = 10 if customer.subscription_model == "premium" else 5
-        active_reservations = self.has_paid_more_than_300k(customer.id)
+        active_reservations = await self.has_paid_more_than_300k(customer.id)
         if active_reservations >= max_units:
-            raise HTTPException("Reservation limit exceeded")
+            raise HTTPException(status_code=403, detail="Reservation limit exceeded")
         
         self.check_funds(customer, days)
 
@@ -99,7 +107,7 @@ class ReservationService:
         return await self.queue_reserve(customer, book)
     
     async def instant_reserve(self, customer, book, days):
-        self.validate_reservation(customer, days)
+        await self.validate_reservation(customer, days)
         
         # Deduct cost from wallet
         daily_rate = 1000
@@ -144,7 +152,7 @@ class ReservationService:
             next_customer = self._get_customer(next_customer_id)
             
             # Check if the customer has sufficient fund
-            self.validate_reservation(customer, days)
+            await self.validate_reservation(customer, days)
             daily_rate = 1000
             total_cost = days * daily_rate
             if next_customer.wallet_money_amount >= total_cost:
@@ -175,14 +183,15 @@ class ReservationService:
         reservation = await repo.get_reservation_by_id_and_customer(reservation_id, customer_id)
         if not reservation:
             raise HTTPException(status_code=404, detail="Reservation not found")
-        
         # Refund wallet (if applicable)
         if reservation.status == "active":
             refund_amount = (reservation.end_of_reservation - reservation.start_of_reservation).days * 1000
             customer.charge_wallet(refund_amount)
         
         # Update book reserved units
-        # book.cancel_reservation()
+        book_id = reservation.book_id
+        book = await self._get_book(book_id)
+        book.cancel_reservation()
 
         # Update reservation status
         

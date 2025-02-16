@@ -1,13 +1,13 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://raya:1234@postgres_db:5432/db2"
+    DATABASE_URL: str
 
     SECRET_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     
-    REDIS_HOST: str = "redis_db"
+    REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB0: int = 0
     REDIS_DB1: int = 1

@@ -31,7 +31,7 @@ class Reservation:
 
 class ReservationCreateSchema(BaseModel):
     book_id: int = Field(..., description="ID of the book to reserve")
-    days: int = Field(..., description="Number of days for reservation")
+    days: int = Field(..., gt=0, le=15, description="Number of days for reservation")
 
 
 class ReservationResponseSchema(BaseModel):

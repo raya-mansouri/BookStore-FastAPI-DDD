@@ -16,3 +16,7 @@ passlib[bcrypt]
 Crypto
 pycryptodome
 python-jose[cryptography]
+pika
+bcrypt
+passlib
+

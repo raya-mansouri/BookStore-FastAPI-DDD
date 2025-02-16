@@ -27,6 +27,18 @@ services:
     networks:
       - app-network
 
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      - app-network
+    depends_on:
+      - redis
+
   # mongodb:
   #   image: mongo:latest
   #   container_name: mongodb_db
@@ -64,6 +76,8 @@ volumes:
   postgres_data:
   redis_data:
   mongodb_data:
+  redisinsight_data:
+
 
 networks:
   app-network:
