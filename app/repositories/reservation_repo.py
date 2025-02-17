@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta
+from fastapi import HTTPException
 import pytz
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
+from app.domain.book.entities import Book
 from app.domain.reservation.entities import Reservation
 from app.repositories.abstract_repo import AbstractRepository
 
@@ -15,8 +18,26 @@ class ReservationRepository(AbstractRepository[Reservation]):
         super().__init__(session, Reservation)
 
     async def add(self, reservation: Reservation):
-        self.session.add(reservation)
-        await self.session.flush() 
+            query = await self.session.execute(
+                select(Book)
+                .where(Book.id == reservation.book_id)
+                .with_for_update()  
+            )
+            book = query.scalar_one_or_none()
+            if not book:
+                raise HTTPException(status_code=404, detail="Book not found.")
+
+            if book.units - book.reserved_units <= 0:
+                raise HTTPException(status_code=400, detail="Book is fully reserved.")
+
+            # Update book reserved units
+            book.reserve_book()
+
+            self.session.add(reservation)
+            try:
+                await self.session.flush()
+            except IntegrityError:
+                raise HTTPException(status_code=409, detail="Pessimistic Lock Error. Please try again.")
 
     async def has_read_more_than_3_books(self, customer_id: int) -> bool:
         thirty_days_ago = now - timedelta(days=30)

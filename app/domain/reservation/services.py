@@ -91,7 +91,7 @@ class ReservationService:
         if active_reservations >= max_units:
             raise HTTPException(status_code=403, detail="Reservation limit exceeded")
         
-        self.check_funds(customer, days)
+        await self.check_funds(customer, days)
 
 
     async def reserve(self, user_id, reservation_data):
@@ -114,9 +114,6 @@ class ReservationService:
         daily_rate = 1000
         total_cost = days * daily_rate
         customer.deduct_from_wallet(total_cost)
-        
-        # Update book reserved units
-        book.reserve_book()
         
         # Create reservation
         reservation = Reservation(
