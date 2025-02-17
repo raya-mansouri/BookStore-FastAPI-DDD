@@ -12,6 +12,7 @@ from app.schemas.customer_schema import CustomerCreate, CustomerUpdate
 from app.repositories.customer_repo import CustomerRepository
 from app.domain.user.entities import UserCreate, LoginStep1Request, LoginStep2Request
 from app.settings import settings
+from app.utils.message_interface.sms_service import KaveNegar, Signal, SmsIR, SmsService
 
 SECRET_KEY =  settings.SECRET_KEY
 ALGORITHM =  settings.ALGORITHM
@@ -25,6 +26,8 @@ redis_client = Redis(
             decode_responses=True)
 
 rate_limiter = RateLimiter(redis_client, "otp_requests")
+
+sms_service = SmsService([SmsIR(), KaveNegar(), Signal()])
 
 class CustomerService:
     async def create_item(self, customer_data: CustomerCreate, uow: UnitOfWork):
@@ -120,7 +123,13 @@ class AuthService:
             await rate_limiter.is_allowed(user.id)
             otp_repo = AuthRepositoryRedis()
             otp = await otp_repo.generate_otp(user.id)
-            return {"message": "OTP sent", "otp": otp}
+            phone_number = "09123567891"
+            # Call to send OTP
+            try:
+                sent_otp = await sms_service.send_otp(phone_number, otp)
+                return {"message": "OTP sent successfully", "otp": sent_otp}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
 
     async def login_step2(self, otp_data: LoginStep2Request, uow: UnitOfWork):
         async with uow:
