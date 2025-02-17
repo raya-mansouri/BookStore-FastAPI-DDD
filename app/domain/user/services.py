@@ -1,9 +1,11 @@
 from typing import List
 from jose import jwt
 from fastapi import HTTPException
+from redis import Redis
 from app.db.unit_of_work import UnitOfWork
 from app.domain.user.entities import Customer
 from app.domain.user.utils import create_access_token, get_password_hash, verify_password
+from app.infrastructure.otp_limiter import RateLimiter
 from app.repositories.user_repo import AuthRepository
 from app.repositories.user_repo_redis import AuthRepositoryRedis
 from app.schemas.customer_schema import CustomerCreate, CustomerUpdate
@@ -14,6 +16,15 @@ from app.settings import settings
 SECRET_KEY =  settings.SECRET_KEY
 ALGORITHM =  settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
+
+redis_client = Redis(
+            host=settings.REDIS_HOST, 
+            port=settings.REDIS_PORT, 
+            db=settings.REDIS_DB0,
+            decode_responses=True)
+
+rate_limiter = RateLimiter(redis_client, "otp_requests")
 
 class CustomerService:
     async def create_item(self, customer_data: CustomerCreate, uow: UnitOfWork):
@@ -106,6 +117,7 @@ class AuthService:
             user = await self.authenticate_user(credentials.username, credentials.password, uow)
             if not user:
                 raise HTTPException(status_code=401, detail="Incorrect username or password")
+            await rate_limiter.is_allowed(user.id)
             otp_repo = AuthRepositoryRedis()
             otp = await otp_repo.generate_otp(user.id)
             return {"message": "OTP sent", "otp": otp}
@@ -121,6 +133,7 @@ class AuthService:
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             access_token = create_access_token({"id": user.id, "sub": user.username, "role": user.role})
+            await rate_limiter.reset(user_id)
             return {"access_token": access_token, "token_type": "bearer"}
 
     async def get_current_user(self, token: str, uow: UnitOfWork):
