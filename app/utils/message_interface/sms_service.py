@@ -70,12 +70,12 @@ class SmsService:
             provider_name = provider.__class__.__name__
 
             if self.circuit_breaker.can_attempt(provider_name):
-                # try:
-                otp_sent = await provider.send_otp(phone_number, otp_code)
-                if otp_sent:
-                    return otp_sent
-                # except Exception:
-                #     self.circuit_breaker.record_failure(provider_name)
+                try:
+                    otp_sent = await provider.send_otp(phone_number, otp_code)
+                    if otp_sent:
+                        return otp_sent
+                except Exception:
+                    self.circuit_breaker.record_failure(provider_name)
 
             self.current_index = (self.current_index + 1) % len(self.providers)
 
