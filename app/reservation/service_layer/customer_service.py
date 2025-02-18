@@ -38,7 +38,10 @@ class CustomerService:
     async def get_item(self, id: int, uow: UnitOfWork) -> Customer:
         async with uow:
             repo = uow.get_repository(CustomerRepository)
-            return await repo.get(id)
+            result = await repo.get(id)
+            if not result:
+                raise HTTPException(status_code=404, detail="Customer not found")
+            return result
 
     async def get_items(self, uow: UnitOfWork) -> List[Customer]:
         async with uow:
