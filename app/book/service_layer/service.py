@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import HTTPException
+from fastapi import HTTPException, Response, status
 from app.adapters.repositories.author_repo import AuthorRepository
 from app.adapters.repositories.book_repo import BookRepository
 from app.book.domain.entities import Book, BookCreate, BookUpdate
@@ -70,4 +70,11 @@ class BookService:
 
     async def delete_item(self, id: int, uow: UnitOfWork):
         repo = uow.get_repository(BookRepository)
-        return repo.delete_book_by_id(id)
+        book = await repo.get(id)
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
+        await repo.remove(book)
+        return Response(
+            "Book deleted successfully",
+            status_code=status.HTTP_200_OK,
+        )
