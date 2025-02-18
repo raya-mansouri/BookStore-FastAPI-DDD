@@ -5,8 +5,9 @@ from typing import List
 from starlette.requests import Request
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.permissions import permission_required
-from app.domain.reservation.entities import *
-from app.domain.reservation.services import ReservationService
+from app.reservation.domain.entities import ReservationCreateSchema
+from app.reservation.service_layer.reservation_services import ReservationService
+
 
 router = APIRouter()
 
@@ -16,8 +17,8 @@ router = APIRouter()
 async def reserve_book(
     request: Request,
     reservation_data: ReservationCreateSchema,
-    uow: UnitOfWork = Depends(get_uow)
-    ):
+    uow: UnitOfWork = Depends(get_uow),
+):
     async with uow:
         reservation_service = ReservationService(uow)
         user_id = request.state.user_id
@@ -25,18 +26,21 @@ async def reserve_book(
         await uow.commit()
         return result
 
+
 @router.delete("/cancel/{reservation_id}")
 @permission_required(allow_current_user=True)
 async def cancel_reservation(
     request: Request,
-    reservation_id: int, 
+    reservation_id: int,
     # reservation_service: ReservationService = Depends(ReservationService),
-    uow: UnitOfWork = Depends(get_uow)
-    ):
+    uow: UnitOfWork = Depends(get_uow),
+):
     async with uow:
         user_id = request.state.user_id
         reservation_service = ReservationService(uow)
-        result =  await reservation_service.cancel_reservation(user_id, reservation_id, uow)
+        result = await reservation_service.cancel_reservation(
+            user_id, reservation_id, uow
+        )
         await uow.commit()
         return result
 

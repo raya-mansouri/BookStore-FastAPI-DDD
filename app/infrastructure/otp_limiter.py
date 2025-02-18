@@ -1,7 +1,7 @@
 import time
 import redis.asyncio as redis
-from fastapi import HTTPException, Depends
-from starlette.requests import Request
+from fastapi import HTTPException
+
 
 class RateLimiter:
     def __init__(self, redis_client: redis.Redis, key_prefix: str):
@@ -19,10 +19,15 @@ class RateLimiter:
         one_hour_count = self.redis.get(one_hour_key) or 0
 
         if int(two_minute_count) >= 5:
-            raise HTTPException(status_code=429, detail="Too many OTP requests. Try again after 2 minutes.")
+            raise HTTPException(
+                status_code=429,
+                detail="Too many OTP requests. Try again after 2 minutes.",
+            )
 
         if int(one_hour_count) >= 10:
-            raise HTTPException(status_code=429, detail="Too many OTP requests. Try again after 1 hour.")
+            raise HTTPException(
+                status_code=429, detail="Too many OTP requests. Try again after 1 hour."
+            )
 
         # increase counter
         self.redis.incr(two_minute_key)
@@ -30,7 +35,7 @@ class RateLimiter:
 
         # set TTL for limits
         self.redis.expire(two_minute_key, 120)  # 2 min
-        self.redis.expire(one_hour_key, 3600)   # 1 hour
+        self.redis.expire(one_hour_key, 3600)  # 1 hour
 
     async def reset(self, user_id: int):
         """reset in case of successful login"""

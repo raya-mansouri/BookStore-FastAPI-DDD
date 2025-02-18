@@ -2,12 +2,12 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.adapters.mappers import start_mappers
-from app.application.events.reservation_event import consume_event
 from app.db.base import mapper_registry
-from app.routers.user_router import router as user_router
-from app.routers.customer_router import router as customer_router
-from app.routers.book_router import router as book_router
-from app.routers.reservation_router import router as reservation_router
+from app.reservation.domain.events import consume_event
+from app.user.entrypoints.routers.user_router import router as user_router
+from app.reservation.entrypoints.routers.customer_router import router as customer_router
+from app.book.entrypoints.routers.book_router import router as book_router
+from app.reservation.entrypoints.routers.reservation_router import router as reservation_router
 
 
 start_mappers(mapper_registry)

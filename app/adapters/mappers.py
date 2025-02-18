@@ -1,10 +1,11 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import event
+from app.book.domain.entities import Book, Genre
 from app.db.base import mapper_registry
 from app.adapters.data_models import *
-from app.domain.book.entities import Book, Genre
-from app.domain.reservation .entities import Reservation
-from app.domain.user.entities import Author, City, Customer, User
+from app.reservation.domain.entities import Customer, Reservation
+from app.user.domain.entities import Author, City, User
+
 # from app.db.database import AsyncSessionLocal
 
 

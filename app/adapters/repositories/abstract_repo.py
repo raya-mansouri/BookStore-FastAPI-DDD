@@ -5,7 +5,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import Executable
 from sqlalchemy.engine import Result
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 class AbstractRepository(Generic[T]):
     def __init__(self, session: AsyncSession, model: Type[T]):
@@ -20,7 +21,9 @@ class AbstractRepository(Generic[T]):
         await self.session.delete(entity)
         await self.session.flush()
 
-    async def get(self, entity_id: int, with_relations: Optional[list] = None) -> Optional[T]:
+    async def get(
+        self, entity_id: int, with_relations: Optional[list] = None
+    ) -> Optional[T]:
         stmt = select(self.model).where(self.model.id == entity_id)
         if with_relations:
             for relation in with_relations:
@@ -34,11 +37,7 @@ class AbstractRepository(Generic[T]):
         return result.scalars().all()
 
     async def update(self, entity_id: int, **kwargs) -> Optional[T]:
-        stmt = (
-            select(self.model)
-            .where(self.model.id == entity_id)
-            .with_for_update()
-        )
+        stmt = select(self.model).where(self.model.id == entity_id).with_for_update()
         result = await self.session.execute(stmt)
         entity = result.scalar_one_or_none()
         if entity:

@@ -4,8 +4,8 @@ from starlette.requests import Request
 from functools import wraps
 from jose import jwt
 from jose.exceptions import JWTError
-from app.domain.user.entities import TokenData
 from app.settings import settings
+from app.user.domain.entities import TokenData
 
 
 SECRET_KEY =  settings.SECRET_KEY

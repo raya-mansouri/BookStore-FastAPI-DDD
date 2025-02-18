@@ -2,8 +2,8 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import or_
-from app.domain.user.entities import UserCreate, User, UserUpdate
 from app.exceptions import InvalidFieldError, NotFoundException
+from app.user.domain.entities import User, UserCreate, UserUpdate
 
 
 class AuthRepository:

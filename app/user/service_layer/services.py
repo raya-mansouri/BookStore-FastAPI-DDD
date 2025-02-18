@@ -3,14 +3,12 @@ from jose import jwt
 from fastapi import HTTPException
 from redis import Redis
 from app.db.unit_of_work import UnitOfWork
-from app.domain.user.entities import Customer, CustomerCreate, CustomerUpdate
-from app.domain.user.utils import create_access_token, get_password_hash, verify_password
 from app.infrastructure.otp_limiter import RateLimiter
 from app.adapters.repositories.user_repo import AuthRepository
 from app.adapters.repositories.user_repo_redis import AuthRepositoryRedis
-from app.adapters.repositories.customer_repo import CustomerRepository
-from app.domain.user.entities import UserCreate, LoginStep1Request, LoginStep2Request
 from app.settings import settings
+from app.user.domain.entities import LoginStep1Request, LoginStep2Request, User, UserCreate, UserUpdate
+from app.user.service_layer.utils import create_access_token, get_password_hash, verify_password
 from app.utils.message_interface.sms_service import KaveNegar, Signal, SmsIR, SmsService
 
 SECRET_KEY =  settings.SECRET_KEY
@@ -27,67 +25,6 @@ redis_client = Redis(
 rate_limiter = RateLimiter(redis_client, "otp_requests")
 
 sms_service = SmsService([SmsIR(), KaveNegar(), Signal()])
-
-class CustomerService:
-    async def create_item(self, customer_data: CustomerCreate, uow: UnitOfWork):
-        async with uow:
-            repo = uow.get_repository(CustomerRepository)
-            new_customer = await repo.create_item(customer_data)
-            await uow.commit()
-            await uow.refresh(new_customer)
-            return new_customer
-
-    async def get_item(self, id: int, uow: UnitOfWork) -> Customer:
-        async with uow:
-            repo = uow.get_repository(CustomerRepository)
-            return await repo.get(id)
-    
-    async def get_items(self, uow: UnitOfWork) -> List[Customer]:
-        async with uow:
-            repo = uow.get_repository(CustomerRepository)
-            return await repo.list()
-
-    async def update_item(self, id: int, customer_data: CustomerUpdate, uow: UnitOfWork):
-        async with uow:
-            repo = uow.get_repository(CustomerRepository)
-            updated_customer = await repo.update_item(id, customer_data)
-            await uow.commit()
-            await uow.refresh(updated_customer)
-            return updated_customer
-
-    async def delete_item(self, id: int, uow: UnitOfWork):
-        async with uow:
-            repo = uow.get_repository(CustomerRepository)
-            deleted_customer = await repo.delete_item(id)
-            await uow.commit()
-            return deleted_customer
-
-    async def charge_wallet(self, user_id: int, amount: int, uow: UnitOfWork) -> Customer:
-        async with uow:
-            repo = uow.get_repository(CustomerRepository)
-            customer = await repo.get_by_user_id(user_id) 
-            if not customer:
-                raise HTTPException(status_code=404, detail="Customer not found")
-            customer.charge_wallet(amount)
-            await uow.commit()
-            return customer
-
-    async def upgrade_subscription(self, user_id: int, subscription_model: str, uow: UnitOfWork) -> Customer:
-        async with uow:
-
-            try:
-                repo = uow.get_repository(CustomerRepository)
-                customer = await repo.get_by_user_id(user_id) 
-
-                if not customer:
-                    raise HTTPException(status_code=404, detail="Customer not found")
-                
-                customer.upgrade_subscription(subscription_model)
-                await uow.commit()
-                return customer            
-            except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
-
 
 
 class AuthService:
@@ -157,17 +94,17 @@ class AuthService:
                 raise HTTPException(status_code=401, detail="Could not validate credentials")
             return user
 
-    async def get_by_id(self, id: int, uow: UnitOfWork) -> Customer:
+    async def get_by_id(self, id: int, uow: UnitOfWork) -> User:
         async with uow:
             repo = uow.get_repository(AuthRepository)
             return await repo.get_by_id(id) 
     
-    async def get_items(self, uow: UnitOfWork) -> List[Customer]:
+    async def get_items(self, uow: UnitOfWork) -> List[User]:
         async with uow:
             repo = uow.get_repository(AuthRepository)
             return await repo.get_all()
 
-    async def update_item(self, id: int, user_data: CustomerUpdate, uow: UnitOfWork):
+    async def update_item(self, id: int, user_data: UserUpdate, uow: UnitOfWork):
         async with uow:
             repo = uow.get_repository(AuthRepository)
             updated_user = await repo.update_item(id, user_data)
@@ -182,9 +119,6 @@ class AuthService:
             await uow.commit()
             return deleted_user
 
-
-async def get_customer_service() -> CustomerService:
-    return CustomerService()
 
 async def get_auth_service() -> AuthService:
     return AuthService()

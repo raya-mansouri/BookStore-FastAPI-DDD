@@ -4,11 +4,12 @@ from typing import Type
 
 from app.db.database import SessionLocal
 
+
 class AbstractUnitOfWork(ABC):
     @abstractmethod
-    def get_repository(self,repo_class):
+    def get_repository(self, repo_class):
         raise NotImplementedError
-    
+
     @abstractmethod
     async def commit(self):
         raise NotImplementedError
@@ -50,12 +51,13 @@ class UnitOfWork(AbstractUnitOfWork):
 
     # Return the UnitOfWork instance for use in `async with`
     async def __aenter__(self):
-        return self  
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
             await self.rollback()  # Rollback on exception
         await self.session.close()  # Close the session
+
 
 # Factory function to create a UnitOfWork instance
 async def get_uow() -> UnitOfWork:

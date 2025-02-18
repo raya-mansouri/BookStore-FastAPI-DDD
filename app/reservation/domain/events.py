@@ -3,9 +3,10 @@ import aio_pika
 import asyncio
 from fastapi import HTTPException
 from app.db.unit_of_work import UnitOfWork
-from app.domain.reservation.services import ReservationService
 from app.adapters.repositories.book_repo import BookRepository
 from app.adapters.repositories.customer_repo import CustomerRepository
+from app.reservation.service_layer.reservation_services import ReservationService
+
 
 async def consume_event():
     async def callback(message: aio_pika.IncomingMessage):
@@ -18,23 +19,23 @@ async def consume_event():
             async with UnitOfWork() as uow:
                 repo = uow.get_repository(BookRepository)
                 book = await repo.get(book_id)
-                
+
                 if not book:
                     raise HTTPException(status_code=404, detail="Book not found")
-                
+
                 customer_repo = uow.get_repository(CustomerRepository)
                 customer = await customer_repo.get(customer_id)
-                
+
                 if not customer:
                     raise HTTPException(status_code=404, detail="Customer not found")
 
                 if event_type == "reservation_cancelled":
                     await ReservationService.process_queue(customer, book, days=7)
-                elif event_type == "reservation_created":   
+                elif event_type == "reservation_created":
                     await ReservationService.process_queue(customer, book, days=7)
                 else:
                     print(f"Unknown event type: {event_type}")
-    
+
     connection = await aio_pika.connect_robust("amqp://guest:guest@localhost/")
     channel = await connection.channel()
     queue = await channel.declare_queue("reservation_events", durable=True)

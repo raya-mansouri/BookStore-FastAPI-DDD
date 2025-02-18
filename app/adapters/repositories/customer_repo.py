@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.user.entities import Customer
 from app.adapters.repositories.abstract_repo import AbstractRepository
-from app.domain.user.entities import CustomerCreate, CustomerUpdate
 from app.exceptions import InvalidFieldError, NotFoundException
+from app.reservation.domain.entities import Customer, CustomerCreate, CustomerUpdate
+
 
 class CustomerRepository(AbstractRepository[Customer]):
     def __init__(self, db: AsyncSession):
@@ -13,7 +13,7 @@ class CustomerRepository(AbstractRepository[Customer]):
 
     async def create_item(self, customer_data: CustomerCreate) -> Optional[Customer]:
         try:
-            new_customer = Customer(**customer_data.model_dump()) 
+            new_customer = Customer(**customer_data.model_dump())
             self.session.add(new_customer)
             await self.session.flush()
             await self.session.refresh(new_customer)
@@ -21,7 +21,9 @@ class CustomerRepository(AbstractRepository[Customer]):
         except InvalidFieldError as e:
             raise InvalidFieldError(f"Customer creation failed: {e}")
 
-    async def update_item(self, id: int, customer_data: CustomerUpdate) -> Optional[Customer]:
+    async def update_item(
+        self, id: int, customer_data: CustomerUpdate
+    ) -> Optional[Customer]:
         try:
             current_customer = await self.get(id)
             if not current_customer:
@@ -42,5 +44,7 @@ class CustomerRepository(AbstractRepository[Customer]):
         return True
 
     async def get_by_user_id(self, user_id: int) -> Optional[Customer]:
-        result = await self.session.execute(select(Customer).where(Customer.user_id == user_id))
+        result = await self.session.execute(
+            select(Customer).where(Customer.user_id == user_id)
+        )
         return result.scalar()
