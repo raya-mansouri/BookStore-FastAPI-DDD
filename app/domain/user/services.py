@@ -3,13 +3,12 @@ from jose import jwt
 from fastapi import HTTPException
 from redis import Redis
 from app.db.unit_of_work import UnitOfWork
-from app.domain.user.entities import Customer
+from app.domain.user.entities import Customer, CustomerCreate, CustomerUpdate
 from app.domain.user.utils import create_access_token, get_password_hash, verify_password
 from app.infrastructure.otp_limiter import RateLimiter
-from app.repositories.user_repo import AuthRepository
-from app.repositories.user_repo_redis import AuthRepositoryRedis
-from app.schemas.customer_schema import CustomerCreate, CustomerUpdate
-from app.repositories.customer_repo import CustomerRepository
+from app.adapters.repositories.user_repo import AuthRepository
+from app.adapters.repositories.user_repo_redis import AuthRepositoryRedis
+from app.adapters.repositories.customer_repo import CustomerRepository
 from app.domain.user.entities import UserCreate, LoginStep1Request, LoginStep2Request
 from app.settings import settings
 from app.utils.message_interface.sms_service import KaveNegar, Signal, SmsIR, SmsService

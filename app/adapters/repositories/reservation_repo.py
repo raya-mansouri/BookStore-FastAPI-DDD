@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
 from app.domain.book.entities import Book
 from app.domain.reservation.entities import Reservation
-from app.repositories.abstract_repo import AbstractRepository
+from app.adapters.repositories.abstract_repo import AbstractRepository
 
 iran_timezone = pytz.timezone("Asia/Tehran")
 now = datetime.now(iran_timezone)

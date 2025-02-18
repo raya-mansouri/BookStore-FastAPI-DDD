@@ -3,8 +3,8 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.user.entities import Customer
-from app.repositories.abstract_repo import AbstractRepository
-from app.schemas.customer_schema import CustomerCreate, CustomerUpdate
+from app.adapters.repositories.abstract_repo import AbstractRepository
+from app.domain.user.entities import CustomerCreate, CustomerUpdate
 from app.exceptions import InvalidFieldError, NotFoundException
 
 class CustomerRepository(AbstractRepository[Customer]):

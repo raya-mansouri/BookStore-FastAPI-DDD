@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.user.entities import Author
-from app.repositories.abstract_repo import AbstractRepository
+from app.adapters.repositories.abstract_repo import AbstractRepository
 from app.exceptions import NotFoundException
 
 

@@ -8,9 +8,9 @@ from app.db.unit_of_work import UnitOfWork
 from app.domain.book.entities import Book
 from app.domain.reservation.entities import QueueResponseSchema, Reservation
 from app.domain.user.entities import Customer
-from app.repositories.book_repo import BookRepository
-from app.repositories.customer_repo import CustomerRepository
-from app.repositories.reservation_repo import ReservationRepository
+from app.adapters.repositories.book_repo import BookRepository
+from app.adapters.repositories.customer_repo import CustomerRepository
+from app.adapters.repositories.reservation_repo import ReservationRepository
 
 redis_client = redis.Redis(
             host=settings.REDIS_HOST, 

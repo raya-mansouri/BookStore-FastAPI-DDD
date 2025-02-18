@@ -5,7 +5,7 @@ from sqlalchemy.orm.exc import StaleDataError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.book.entities import Book
 from app.exceptions import NotFoundException
-from app.repositories.abstract_repo import AbstractRepository
+from app.adapters.repositories.abstract_repo import AbstractRepository
 
 
 class BookRepository(AbstractRepository[Book]):

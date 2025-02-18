@@ -4,8 +4,8 @@ import asyncio
 from fastapi import HTTPException
 from app.db.unit_of_work import UnitOfWork
 from app.domain.reservation.services import ReservationService
-from app.repositories.book_repo import BookRepository
-from app.repositories.customer_repo import CustomerRepository
+from app.adapters.repositories.book_repo import BookRepository
+from app.adapters.repositories.customer_repo import CustomerRepository
 
 async def consume_event():
     async def callback(message: aio_pika.IncomingMessage):

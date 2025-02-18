@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from app.repositories.book_repo import BookRepository
+from app.adapters.repositories.book_repo import BookRepository
 
     
 async def get_book(self, book_id):

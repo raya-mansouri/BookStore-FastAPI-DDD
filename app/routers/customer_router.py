@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.status import HTTP_204_NO_CONTENT
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.permissions import permission_required
-from app.schemas.customer_schema import CustomerCreate, CustomerUpdate, CustomerOut
+from app.domain.user.entities import CustomerCreate, CustomerUpdate, CustomerOut
 from app.domain.user.services import CustomerService
 
 

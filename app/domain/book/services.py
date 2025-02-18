@@ -2,8 +2,8 @@ from typing import List, Optional
 from fastapi import HTTPException
 from app.db.unit_of_work import UnitOfWork
 from app.domain.book.entities import Book, BookCreate, BookUpdate
-from app.repositories.author_repo import AuthorRepository
-from app.repositories.book_repo import BookRepository
+from app.adapters.repositories.author_repo import AuthorRepository
+from app.adapters.repositories.book_repo import BookRepository
 
 
 class BookService:

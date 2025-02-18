@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from app.repositories.customer_repo import CustomerRepository
+from app.adapters.repositories.customer_repo import CustomerRepository
 
 
 async def get_customer(self, user_id):
