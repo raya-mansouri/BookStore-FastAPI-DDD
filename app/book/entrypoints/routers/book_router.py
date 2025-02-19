@@ -1,15 +1,25 @@
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import APIRouter, Depends, status
+from pika import BlockingConnection, ConnectionParameters
+from redis import Redis
 from app.book.domain.entities import BookCreate, BookOut, BookUpdate
 from app.book.service_layer.service import BookService
 from app.db.unit_of_work import UnitOfWork, get_uow
 from app.permissions import permission_required
+from app.infrastructure.mongodb.mongodb import books_collection
 
 
 router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+# Initialize Redis and RabbitMQ connections
+redis = Redis(host="localhost", port=6379, db=0)
+mq_connection = BlockingConnection(ConnectionParameters("localhost"))
+
+# Dependency to inject BookService
+def get_book_service():
+    return BookService(cache=redis, mq_connection=mq_connection)
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 # @permission_required(allowed_roles=["admin"])
@@ -35,6 +45,22 @@ async def get_book(
     async with uow:
         return await book_service.get_item(book_id, uow)
 
+@router.get("/search", response_model=list[BookOut])
+async def search_books(
+    query: str,
+    skip: int = 0,
+    limit: int = 100,
+):
+    
+    # Create a text index on the 'title' and 'description' fields
+    books_collection.create_index([("title", "text"), ("description", "text")])
+    
+    results = books_collection.find(
+        {"$text": {"$search": query}},
+        {"score": {"$meta": "textScore"}},
+    ).sort([("score", {"$meta": "textScore"})]).skip(skip).limit(limit)
+
+    return [BookOut(**book) for book in results]
 
 @router.get("/", response_model=list[BookOut])
 async def get_all_books(
