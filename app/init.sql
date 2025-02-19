@@ -1,73 +1,3 @@
-CREATE TYPE user_roles AS ENUM ('admin', 'customer', 'author');
-CREATE TYPE subscription_models AS ENUM ('free', 'plus', 'premium');
-CREATE TYPE reservation_status AS ENUM ('pending', 'active', 'completed');
-
-CREATE TABLE IF NOT EXISTS "user" (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    phone VARCHAR(11) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role user_roles NOT NULL,
-    is_active BOOLEAN DEFAULT FALSE NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS city (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS genre (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS author (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER UNIQUE NOT NULL REFERENCES "user"(id),
-    city_id INTEGER NOT NULL REFERENCES city(id),
-    goodreads_link VARCHAR(255),
-    bank_account_number VARCHAR(16) NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS customer (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER UNIQUE NOT NULL REFERENCES "user"(id),
-    subscription_model subscription_models NOT NULL,
-    subscription_end_time TIMESTAMP DEFAULT NOW(),
-    wallet_money_amount INTEGER DEFAULT 0 NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS book (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    isbn VARCHAR(13) UNIQUE NOT NULL,
-    price INTEGER DEFAULT 0 NOT NULL,
-    genre_id INTEGER NOT NULL REFERENCES genre(id),
-    description VARCHAR(1000),
-    units INTEGER NOT NULL,
-    reserved_units INTEGER DEFAULT 0 NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS reservation (
-    id SERIAL PRIMARY KEY,
-    customer_id INTEGER NOT NULL REFERENCES customer(id),
-    book_id INTEGER NOT NULL REFERENCES book(id),
-    start_of_reservation TIMESTAMP DEFAULT NOW() NOT NULL,
-    end_of_reservation TIMESTAMP DEFAULT NOW() NOT NULL,
-    price INTEGER NOT NULL,
-    status reservation_status DEFAULT 'pending',
-    queue_position INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS book_author (
-    book_id INTEGER NOT NULL REFERENCES book(id),
-    author_id INTEGER NOT NULL REFERENCES author(id),
-    PRIMARY KEY (book_id, author_id)
-);
-
 INSERT INTO city (name) VALUES 
 ('New York'), ('Los Angeles'), ('Chicago'), ('Houston'), ('Phoenix'),
 ('San Diego'), ('Dallas'), ('San Francisco'), ('Miami'), ('Seattle')
@@ -114,6 +44,19 @@ INSERT INTO book (title, isbn, price, genre_id, description, units, reserved_uni
 ('Pride and Prejudice', '9780141439518', 110000, 5, 'A romantic novel.', 9, 0)
 ON CONFLICT DO NOTHING;
 
+-- Insert authors into book_author_table (adjust IDs as needed)
+-- For example, for 'Dune' which has authors with ids 1 and 2:
+INSERT INTO book_author (book_id, author_id) VALUES
+(1, 1), -- Dune with Author(id=1)
+(1, 2), -- Dune with Author(id=2)
+(2, 3), -- Harry Potter with Author(id=3)
+(3, 4), -- Sherlock Holmes with Author(id=4)
+(4, 1), -- Gone Girl with Author(id=1)
+(4, 3), -- Gone Girl with Author(id=3)
+(5, 4), -- Pride and Prejudice with Author(id=4)
+(5, 2); -- Pride and Prejudice with Author(id=2)
+
+
 INSERT INTO reservation (customer_id, book_id, start_of_reservation, end_of_reservation, price, status, queue_position) VALUES
 (1, 1, NOW(), NOW() + INTERVAL '7 days', 150000, 'pending', NULL),
 (2, 2, NOW(), NOW() + INTERVAL '5 days', 120000, 'active', NULL),
@@ -121,12 +64,3 @@ INSERT INTO reservation (customer_id, book_id, start_of_reservation, end_of_rese
 (4, 4, NOW(), NOW() + INTERVAL '3 days', 140000, 'pending', NULL),
 (5, 5, NOW(), NOW() + INTERVAL '1 month', 110000, 'active', NULL)
 ON CONFLICT DO NOTHING;
-
-INSERT INTO book_author (book_id, author_id) VALUES
-(1, 1),
-(2, 2),
-(3, 3),
-(4, 4),
-(5, 2)
-ON CONFLICT DO NOTHING;
-

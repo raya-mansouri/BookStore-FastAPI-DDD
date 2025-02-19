@@ -27,8 +27,13 @@ COPY .env .
 # Copy the src directory to /app/
 COPY ./src /app  
 
+# Copy the init.sql file into the container
+COPY init.sql /app/init.sql
+
 # Expose the port your FastAPI app will run on
 EXPOSE 8000
 
+RUN chmod +x docker.sh
+CMD [ "./docker.sh" ]
 # Command to run the FastAPI app using Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
