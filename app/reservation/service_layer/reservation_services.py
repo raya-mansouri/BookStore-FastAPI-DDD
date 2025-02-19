@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from datetime import datetime, timedelta
 import redis, pytz
-from app.infrastructure.messaging.rabbitmq import publish_event
+from app.infrastructure.rabbitmq.publish_rabbitmq import publish_event
 from app.reservation.domain.entities import QueueResponseSchema, Reservation
 from app.settings import settings
 from app.db.unit_of_work import UnitOfWork

@@ -1,46 +1,24 @@
-import json
-import aio_pika
-import asyncio
-from fastapi import HTTPException
+from datetime import datetime, timedelta
+from app.adapters.repositories.reservation_repo import ReservationRepository
 from app.db.unit_of_work import UnitOfWork
-from app.adapters.repositories.book_repo import BookRepository
-from app.adapters.repositories.customer_repo import CustomerRepository
-from app.reservation.service_layer.reservation_services import ReservationService
+from app.infrastructure.rabbitmq.publish_rabbitmq import publish_event
 
 
-async def consume_event():
-    async def callback(message: aio_pika.IncomingMessage):
-        async with message.process():
-            event_data = json.loads(message.body)
-            event_type = event_data.get("event_type")
-            book_id = event_data.get("book_id")
-            customer_id = event_data.get("customer_id")
+async def check_reservations_ending_soon():
 
-            async with UnitOfWork() as uow:
-                repo = uow.get_repository(BookRepository)
-                book = await repo.get(book_id)
-
-                if not book:
-                    raise HTTPException(status_code=404, detail="Book not found")
-
-                customer_repo = uow.get_repository(CustomerRepository)
-                customer = await customer_repo.get(customer_id)
-
-                if not customer:
-                    raise HTTPException(status_code=404, detail="Customer not found")
-
-                if event_type == "reservation_cancelled":
-                    await ReservationService.process_queue(customer, book, days=7)
-                elif event_type == "reservation_created":
-                    await ReservationService.process_queue(customer, book, days=7)
-                else:
-                    print(f"Unknown event type: {event_type}")
-
-    connection = await aio_pika.connect_robust("amqp://guest:guest@localhost/")
-    channel = await connection.channel()
-    queue = await channel.declare_queue("reservation_events", durable=True)
-
-    await queue.consume(callback)
-    print("Waiting for events. To exit press CTRL+C")
-
-    await asyncio.Future()
+    async with UnitOfWork() as uow:
+        repo = uow.get_repository(ReservationRepository)
+        reservations = await repo.get_all_active_reservations()
+        for reservation in reservations:
+            end_of_reservation = reservation.end_of_reservation
+            if end_of_reservation - timedelta(days=1) <= datetime.now():
+                # Publish an event to remind the customer one day before the reservation ends
+                event = {
+                    "event_type": "reservation_ending_soon",
+                    "reservation": {
+                        "customer_id": reservation.customer_id,
+                        "book_id": reservation.book_id,
+                        "end_of_reservation": end_of_reservation.isoformat(),
+                    }
+                }
+                publish_event(event)

@@ -76,3 +76,10 @@ class ReservationRepository(AbstractRepository[Reservation]):
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    async def get_all_active_reservations(self) -> list[Reservation] | None:
+        stmt = select(Reservation).where(Reservation.status == "active")
+        result = await self.session.execute(stmt)
+        if not result:
+            raise HTTPException(status_code=404, detail="No reservation found.")
+        return result.scalars().all()

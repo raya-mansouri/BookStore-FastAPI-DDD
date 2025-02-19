@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.adapters.mappers import start_mappers
 from app.db.base import mapper_registry
-from app.reservation.domain.events import consume_event
+from app.infrastructure.rabbitmq.consume_rabbitmq import consume_event
+from app.reservation.domain.events import check_reservations_ending_soon
 from app.user.entrypoints.routers.user_router import router as user_router
 from app.reservation.entrypoints.routers.customer_router import router as customer_router
 from app.book.entrypoints.routers.book_router import router as book_router
@@ -17,6 +18,7 @@ scheduler = AsyncIOScheduler()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler.add_job(consume_event, 'interval', minutes=1)
+    scheduler.add_job(check_reservations_ending_soon, 'cron', hour=9, minute=0)
     scheduler.start()
     yield
     scheduler.shutdown()
