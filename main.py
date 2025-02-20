@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from alembic.config import Config
+from alembic import command
 from app.adapters.mappers import start_mappers
 from app.db.base import mapper_registry
 from app.infrastructure.mongodb.consume_mongo import consume_book_updates
+from app.infrastructure.mongodb.mongodb import init_mongo
 from app.infrastructure.rabbitmq.consume_rabbitmq import consume_event
 from app.reservation.domain.events import check_reservations_ending_soon
 from app.user.entrypoints.routers.user_router import router as user_router
@@ -21,10 +24,17 @@ start_mappers(mapper_registry)
 # Initialize the scheduler to handle background tasks
 scheduler = AsyncIOScheduler()
 
+# Alembic migration function
+# async def run_migrations():
+#     alembic_cfg = Config("alembic.ini")  # Path to alembic.ini
+#     await command.upgrade(alembic_cfg, "head")
 
 # Context manager for managing the lifespan of the FastAPI application
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # print("🚀 Running database migrations...")
+    # await run_migrations()  # Run Alembic migrations before starting
+
     # Schedule tasks to run at regular intervals
     scheduler.add_job(
         consume_event, "interval", minutes=1
@@ -36,6 +46,9 @@ async def lifespan(app: FastAPI):
         consume_book_updates, "interval", minutes=1
     )  # Consuming book updates from MongoDB every 1 minute
     scheduler.start()  # Start the scheduler
+
+    await init_mongo()
+
     yield  # Yield control to the FastAPI app lifecycle
     scheduler.shutdown()  # Shutdown the scheduler when the app stops
 

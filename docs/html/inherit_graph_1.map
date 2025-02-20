@@ -1,0 +1,15 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,149,125,174"/>
+<area shape="rect" id="Node000001" href="$classexceptions_1_1CustomerNotFoundError.html" title=" " alt="" coords="173,5,396,45"/>
+<area shape="poly" id="edge2_Node000000_Node000001" title=" " alt="" coords="83,136,121,95,145,73,172,55,197,43,199,48,175,60,149,78,125,99,87,140"/>
+<area shape="rect" id="Node000002" href="$classexceptions_1_1DatabaseError.html" title=" " alt="" coords="189,70,380,95"/>
+<area shape="poly" id="edge3_Node000000_Node000002" title=" " alt="" coords="98,139,133,121,172,104,211,93,213,98,174,109,136,126,101,144"/>
+<area shape="rect" id="Node000003" href="$classexceptions_1_1DatabaseException.html" title=" " alt="" coords="173,119,396,145"/>
+<area shape="poly" id="edge4_Node000000_Node000003" title=" " alt="" coords="139,149,189,142,190,147,139,154"/>
+<area shape="rect" id="Node000004" href="$classexceptions_1_1DuplicateCustomerError.html" title=" " alt="" coords="173,169,396,209"/>
+<area shape="poly" id="edge5_Node000000_Node000004" title=" " alt="" coords="140,168,173,172,173,178,139,173"/>
+<area shape="rect" id="Node000005" href="$classexceptions_1_1InvalidFieldError.html" title=" " alt="" coords="183,234,386,259"/>
+<area shape="poly" id="edge6_Node000000_Node000005" title=" " alt="" coords="98,179,134,200,174,219,215,231,214,237,172,224,131,205,95,184"/>
+<area shape="rect" id="Node000006" href="$classexceptions_1_1NotFoundException.html" title=" " alt="" coords="173,283,396,309"/>
+<area shape="poly" id="edge7_Node000000_Node000006" title=" " alt="" coords="85,183,123,228,148,250,175,268,204,281,202,286,172,273,144,254,119,231,81,187"/>
+</map>

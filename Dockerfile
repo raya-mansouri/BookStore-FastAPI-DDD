@@ -13,27 +13,22 @@ RUN apt-get update && apt-get install -y \
     gcc
 
 # Copy the requirements file into the container
-COPY requirements.txt .
+COPY requirements.txt /app/
 
 # Install dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the .env file into the container
-# Copy the .env file to /app/.env/
-COPY .env .  
+# Copy the init.sql file into the container
+COPY ./app/init.sql /app/init.sql
 
 # Copy the src directory into the container
 # Copy the src directory to /app/
-COPY ./src /app  
+COPY ./docker.sh /app/
 
-# Copy the init.sql file into the container
-COPY init.sql /app/init.sql
+COPY . /app/ 
 
-# Expose the port your FastAPI app will run on
-EXPOSE 8000
+RUN chmod +x /app/docker.sh
 
-RUN chmod +x docker.sh
-CMD [ "./docker.sh" ]
-# Command to run the FastAPI app using Uvicorn
-# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+CMD [ "/app/docker.sh" ]

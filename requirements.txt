@@ -2,11 +2,9 @@ pydantic
 pydantic-settings
 sqlalchemy
 alembic
-psycopg2
 fastapi 
 uvicorn 
 asyncpg 
-psycopg2-binary
 greenlet
 pydantic[email]
 pytz

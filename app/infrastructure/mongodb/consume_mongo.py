@@ -51,23 +51,21 @@ async def consume_book_updates():
                 # Delete the book from MongoDB
                 book_handler.handle_book_deleted({"_id": book_id})
 
-    # Establish a connection to RabbitMQ and create a channel
-    connection = await aio_pika.connect_robust("amqp://guest:guest@localhost/")
-    channel = await connection.channel()
+    while True:
+        try:
+            # Connect to RabbitMQ
+            connection = await aio_pika.connect_robust("amqp://guest:guest@localhost/")
+            async with connection:
+                channel = await connection.channel()
+                queue = await channel.declare_queue("book_updates", durable=True)
 
-    # Declare the 'book_updates' queue and make sure it's durable
-    try:
-        queue = await channel.declare_queue("book_updates", durable=True, passive=True)
-    except aio_pika.exceptions.AMQPChannelError:
-        # If the queue doesn't exist, declare it with the correct properties
-        queue = await channel.declare_queue("book_updates", durable=True)
+                print("Waiting for book_updates events. To exit press CTRL+C")
+                await queue.consume(callback)
+                await asyncio.Future()  # Keeps the consumer running
 
-    # Start consuming messages from the 'book_updates' queue
-    await queue.consume(callback)
-    print("Waiting for book_updates events. To exit press CTRL+C")
-
-    # Keep the consumer running indefinitely
-    await asyncio.Future()
+        except aio_pika.exceptions.AMQPConnectionError:
+            print("RabbitMQ connection failed. Retrying in 5 seconds...")
+            await asyncio.sleep(5)  # Retry connection after 5 seconds
 
 
 # To run the consumer in a separate thread or process, use threading:
