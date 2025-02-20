@@ -1,7 +1,6 @@
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 from datetime import datetime, timedelta
-
 import pytz
 from app.exceptions import InvalidFieldError
 from app.reservation.domain.object_values import ReservationStatus
@@ -9,6 +8,11 @@ from app.user.domain.object_values import SubscriptionModel
 
 
 class Customer:
+    """
+    Represents a customer with attributes like user ID, subscription model,
+    subscription expiration date, and wallet balance.
+    """
+
     id: int
     user_id: int
     subscription_model: str
@@ -24,18 +28,19 @@ class Customer:
     ):
         self.user_id = user_id
         self.subscription_model = subscription_model
-        subscription_end_time = subscription_end_time
+        self.subscription_end_time = subscription_end_time
         self.wallet_money_amount = wallet_money_amount
 
     def __validate(
         self, id: int, user_id: int, subscription_model: str, wallet_money_amount: int
     ):
+        """Validates customer attributes to ensure correctness."""
         if not isinstance(user_id, int) or user_id <= 0:
             raise InvalidFieldError("User ID must be a positive integer.")
 
         if subscription_model not in SubscriptionModel:
             raise InvalidFieldError(
-                "subscription_model must be one of: 'free', 'plus', 'premium'."
+                "Subscription model must be one of: 'free', 'plus', 'premium'."
             )
 
         if not isinstance(wallet_money_amount, int) or wallet_money_amount < 0:
@@ -44,14 +49,9 @@ class Customer:
             )
 
     def __setattr__(self, name, value):
-        # Validate before setting any attribute
+        """Custom attribute setter to enforce validation on certain fields."""
         if name == "user_id" and (not isinstance(value, int) or value <= 0):
             raise InvalidFieldError("User ID must be a positive integer.")
-        # elif name == "subscription_model":
-        #     if value not in list(SubscriptionModel._value2member_map_):
-        #         raise InvalidFieldError("subscription_model must be one of: 'free', 'plus', 'premium'.")
-        #     else:
-        #         value = SubscriptionModel(value)
         elif name == "wallet_money_amount" and (
             not isinstance(value, int) or value < 0
         ):
@@ -62,30 +62,23 @@ class Customer:
             super().__setattr__(name, value)
 
     def __getattr__(self, name):
-        # Handle attribute access if it does not exist
+        """Handles attribute access for undefined attributes."""
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
 
     def validate(self):
-        # Re-run the validation logic, could be used for revalidation after changing values
+        """Triggers validation for customer attributes."""
         self.__validate(
             self.id, self.user_id, self.subscription_model, self.wallet_money_amount
         )
 
-    def __repr__(self):
-        return f"Customer(id={self.id}, user_id={self.user_id}, subscription_model='{self.subscription_model}', wallet_money_amount={self.wallet_money_amount})"
-
-    def __eq__(self, other):
-        if not isinstance(other, Customer):
-            return False
-        return self.id == other.id
-
     def charge_wallet(self, amount: int):
-        """Increase the wallet balance by the given amount."""
+        """Increases the wallet balance by the given amount."""
         self.wallet_money_amount += amount
 
     def upgrade_subscription(self, new_model: str):
+        """Handles upgrading the customer's subscription model."""
         pre_wallet_amount = self.wallet_money_amount
         pre_subscription_model = self.subscription_model
         iran_timezone = pytz.timezone("Asia/Tehran")
@@ -96,7 +89,7 @@ class Customer:
             ("plus", "premium"): 150000,
             ("free", "premium"): 200000,
         }
-        duration = timedelta(days=30)  # Both "plus" and "premium" last for 1 month
+        duration = timedelta(days=30)
 
         cost = cost_mapping.get((pre_subscription_model, new_model))
         if cost is None:
@@ -110,58 +103,59 @@ class Customer:
         self.subscription_end_time = now + duration
 
     def deduct_from_wallet(self, amount):
+        """Deducts a specified amount from the wallet balance."""
         self.wallet_money_amount -= amount
 
 
-from pydantic import BaseModel, Field
-from datetime import datetime
 from typing import Optional
 from enum import Enum
 
 
 class CustomerBase(BaseModel):
-    user_id: int = Field(
-        ..., description="The ID of the user associated with the customer", example=1
-    )
+    """Base schema for customer data."""
+
+    user_id: int = Field(..., description="User ID of the customer", example=1)
     subscription_model: str = Field(
-        "free",
-        description="Subscription model of the customer",
-        example="free",
+        "free", description="Customer's subscription model", example="free"
     )
     subscription_end_time: Optional[datetime] = Field(
-        None, description="End time of the subscription", example="2023-12-31T23:59:59"
+        None, description="Subscription end time", example="2023-12-31T23:59:59"
     )
-    wallet_money_amount: int = Field(
-        0, description="Amount of money in the wallet", example=10000
-    )
+    wallet_money_amount: int = Field(0, description="Amount in wallet", example=10000)
 
 
 class CustomerCreate(CustomerBase):
+    """Schema for creating a new customer."""
+
     pass
 
 
 class CustomerUpdate(BaseModel):
+    """Schema for updating customer details."""
+
     subscription_model: Optional[str] = Field(
-        None, description="Subscription model of the customer", example="premium"
+        None, description="New subscription model", example="premium"
     )
     subscription_end_time: Optional[datetime] = Field(
-        None, description="End time of the subscription", example="2024-12-31T23:59:59"
+        None, description="Updated subscription end time", example="2024-12-31T23:59:59"
     )
     wallet_money_amount: Optional[int] = Field(
-        None, description="Amount of money in the wallet", example=20000
+        None, description="Updated wallet balance", example=20000
     )
 
 
 class CustomerOut(CustomerBase):
-    id: int = Field(
-        ..., description="The unique identifier for the customer", example=1
-    )
+    """Schema for returning customer data."""
+
+    id: int = Field(..., description="Customer ID", example=1)
 
     class Config:
         orm_mode = True
 
 
 class Reservation:
+    """Represents a book reservation."""
+
     id: int
     customer_id: int
     book_id: int
@@ -188,11 +182,15 @@ class Reservation:
 
 
 class ReservationCreateSchema(BaseModel):
+    """Schema for creating a book reservation."""
+
     book_id: int = Field(..., description="ID of the book to reserve")
-    days: int = Field(..., gt=0, le=15, description="Number of days for reservation")
+    days: int = Field(..., gt=0, le=15, description="Number of reservation days")
 
 
 class ReservationResponseSchema(BaseModel):
+    """Schema for reservation response."""
+
     id: int
     customer_id: int
     book_id: int
@@ -202,6 +200,8 @@ class ReservationResponseSchema(BaseModel):
 
 
 class QueueResponseSchema(BaseModel):
+    """Schema for returning queue position in case of unavailable books."""
+
     customer_id: int
     book_id: int
     queue_position: int
