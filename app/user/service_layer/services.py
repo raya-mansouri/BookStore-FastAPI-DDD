@@ -158,10 +158,15 @@ class AuthService:
             return user
 
     # Method to fetch a user by their ID
-    async def get_by_id(self, id: int, uow: UnitOfWork) -> User:
+    async def get_by_id(self, id: int, uow: UnitOfWork) -> User | dict:
         async with uow:
             repo = uow.get_repository(AuthRepository)
-            return await repo.get_by_id(id)
+            result = await repo.get(id)
+            if not result:
+                raise HTTPException(
+                    status_code=404, detail="User not found"
+                )
+            return result
 
     # Method to fetch all users
     async def get_items(self, uow: UnitOfWork) -> List[User]:
@@ -183,8 +188,13 @@ class AuthService:
         async with uow:
             repo = uow.get_repository(AuthRepository)
             deleted_user = await repo.delete_item(id)  # Delete user
-            await uow.commit()
-            return deleted_user
+            if deleted_user:
+                await uow.commit()
+                return {"User delete successfully"}
+            else:
+                raise HTTPException(
+                    status_code=404, detail="User not found"
+                )
 
 
 # Dependency function to provide an instance of AuthService

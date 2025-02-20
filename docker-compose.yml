@@ -69,22 +69,22 @@ services:
     networks:
       - app-network
 
-  app:
-    build: .
-    container_name: fastapi_app
-    env_file: .env  
-    environment:
-      - POSTGRES_URL=postgres://${POSTGRES_USER}:$1234@postgres:5432/db2
-      - REDIS_URL=redis://redis:6379
-      - MONGO_URL=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-      - redis
-      - mongodb
-    networks:
-      - app-network
+  # app:
+  #   build: .
+  #   container_name: fastapi_app
+  #   env_file: .env  
+  #   environment:
+  #     - POSTGRES_URL=postgres://${POSTGRES_USER}:$1234@postgres:5432/db2
+  #     - REDIS_URL=redis://redis:6379
+  #     - MONGO_URL=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - mongodb
+  #   networks:
+  #     - app-network
 
 volumes:
   postgres_data:

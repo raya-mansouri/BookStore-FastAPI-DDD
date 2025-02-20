@@ -57,7 +57,7 @@ async def logout(response: Response, request: Request):
 
 
 # Endpoint to get a user by their ID
-@router.get("/{id}", response_model=UserOut)
+@router.get("/{id}", response_model=UserOut | None)
 async def get_user(
     id: int,
     auth_service: AuthService = Depends(AuthService),

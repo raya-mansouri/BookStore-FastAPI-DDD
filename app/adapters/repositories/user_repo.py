@@ -2,11 +2,12 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import or_
+from app.adapters.repositories.abstract_repo import AbstractRepository
 from app.exceptions import InvalidFieldError, NotFoundException
 from app.user.domain.entities import User, UserCreate, UserUpdate
 
 
-class AuthRepository:
+class AuthRepository(AbstractRepository[User]):
     def __init__(self, db: AsyncSession):
         """
         Initializes the repository with the provided AsyncSession instance.
@@ -14,6 +15,7 @@ class AuthRepository:
         :param db: The database session to interact with.
         """
         self.db = db
+        super().__init__(db, User)
 
     async def get_by_username_or_email(
         self, username: str, email: str
