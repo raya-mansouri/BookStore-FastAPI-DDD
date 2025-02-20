@@ -21,4 +21,4 @@ bcrypt
 passlib
 apscheduler
 aio_pika
-pymongo
+motor

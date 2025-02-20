@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 
@@ -37,6 +38,19 @@ class Book:
         self.description = description
         self.reserved_units = reserved_units
         self.authors = authors
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "isbn": self.isbn,
+            "price": self.price,
+            "genre_id": self.genre_id,
+            "units": self.units,
+            "description": self.description,
+            "reserved_units": self.reserved_units,
+            "author_ids": self.author_ids
+        }
 
     def cancel_reservation(self):
         self.reserved_units -= 1
@@ -99,7 +113,7 @@ class BookBase(BaseModel):
         Validate that the title is not empty and is properly formatted.
         """
         if not value.strip():
-            raise ValueError("Title cannot be empty or just whitespace.")
+            raise HTTPException(status_code=400, detail="Title cannot be empty or just whitespace.")
         return value.strip()
 
     @field_validator("isbn")
@@ -108,7 +122,7 @@ class BookBase(BaseModel):
         Validate that the ISBN is exactly 13 digits.
         """
         if not value.isdigit() or len(value) != 13:
-            raise ValueError("ISBN must be exactly 13 digits.")
+            raise HTTPException(status_code=400, detail="ISBN must be exactly 13 digits.")
         return value
 
     @field_validator("author_ids")
@@ -117,7 +131,7 @@ class BookBase(BaseModel):
         Validate that there is at least one author ID.
         """
         if not value:
-            raise ValueError("At least one author ID is required.")
+            raise HTTPException(status_code=400, detail="At least one author ID is required.")
         return value
 
     class Config:

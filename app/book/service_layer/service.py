@@ -1,11 +1,12 @@
 import json
+import pickle
 from typing import List, Optional
 from fastapi import HTTPException, Response, status
 from pika import BlockingConnection
 from redis import Redis
 from app.adapters.repositories.author_repo import AuthorRepository
 from app.adapters.repositories.book_repo import BookRepository
-from app.book.domain.entities import Book, BookCreate, BookUpdate
+from app.book.domain.entities import Book, BookCreate, BookOut, BookUpdate
 from app.db.unit_of_work import UnitOfWork
 
 
@@ -17,23 +18,23 @@ class BookService:
         self.mq_channel.queue_declare(queue="book_updates")
 
     async def create_item(
-        self, book_data: BookCreate, uow: UnitOfWork
+        self, new_book: BookCreate, uow: UnitOfWork
     ) -> Optional[Book]:
         repo = uow.get_repository(BookRepository)
 
-        for key, value in book_data.model_dump(exclude_none=True).items():
-            setattr(book_data, key, value)
+        for key, value in new_book.model_dump(exclude_none=True).items():
+            setattr(new_book, key, value)
 
-        if book_data.author_ids:
-            authors = await self.get_authors_by_ids(uow, book_data.author_ids)
+        if new_book.author_ids:
+            authors = await self.get_authors_by_ids(uow, new_book.author_ids)
 
         book_data = Book(
-            title=book_data.title,
-            isbn=book_data.isbn,
-            price=book_data.price,
-            genre_id=book_data.genre_id,
-            description=book_data.description,
-            units=book_data.units,
+            title=new_book.title,
+            isbn=new_book.isbn,
+            price=new_book.price,
+            genre_id=new_book.genre_id,
+            description=new_book.description,
+            units=new_book.units,
             reserved_units=0,
             authors=authors,
         )
@@ -45,7 +46,7 @@ class BookService:
             body=json.dumps({
                 'event_type': 'book_created',
                 'book_id': book_data.id,
-                'book_data': book_data.model_dump(),
+                'book_data': new_book.model_dump(),
             })
         )
 
@@ -54,11 +55,11 @@ class BookService:
         authors = await repo.get_by_ids(author_ids)
         return authors
 
-    async def get_item(self, id: int, uow: UnitOfWork) -> Book:
+    async def get_item(self, id: int, uow: UnitOfWork) -> Book | BookOut:
         cache_key = f"book:{id}"
         cached_book = self.cache.get(cache_key)
         if cached_book:
-            return cached_book
+            return BookOut(**json.loads(cached_book))
         repo = uow.get_repository(BookRepository)
         result = await repo.get(id)
         if not result:
@@ -66,14 +67,17 @@ class BookService:
         author_ids = await repo.get_author_ids_from_books(id)
         result.author_ids = author_ids
         # Cache the result
-        self.cache.set(cache_key, result, ex=10080)
+        book_dict = {c.name: getattr(result, c.name) for c in result.__table__.columns}
+        book_dict["author_ids"] = author_ids  
+        serialized_book = json.dumps(book_dict)
+        self.cache.set(cache_key, serialized_book, ex=10080)
         return result
 
-    async def get_items(self, uow: UnitOfWork, skip: int, limit: int) -> List[Book]:
+    async def get_items(self, uow: UnitOfWork, skip: int, limit: int) -> List[Book] | list[BookOut]:
         cache_key = f"books:{skip}:{limit}"
         cached_books = self.cache.get(cache_key)
         if cached_books:
-            return cached_books
+            return [BookOut(**book) for book in json.loads(cached_books)]
         
         repo = uow.get_repository(BookRepository)
         result = await repo.get_book_list(skip, limit)
@@ -83,7 +87,8 @@ class BookService:
             author_ids = await repo.get_author_ids_from_books(book.id)
             book.author_ids = author_ids
         # Cache the result
-        self.cache.set(cache_key, result, ex=10080) 
+        serialized_books = json.dumps([book.to_dict() for book in result])
+        self.cache.set(cache_key, serialized_books, ex=10080)
         return result
 
     async def update_item(self, id: int, book_data: BookUpdate, uow: UnitOfWork):

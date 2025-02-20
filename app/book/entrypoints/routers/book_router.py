@@ -2,6 +2,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import APIRouter, Depends, status
 from pika import BlockingConnection, ConnectionParameters
 from redis import Redis
+from app.settings import settings
 from app.book.domain.entities import BookCreate, BookOut, BookUpdate
 from app.book.service_layer.service import BookService
 from app.db.unit_of_work import UnitOfWork, get_uow
@@ -11,22 +12,21 @@ from app.infrastructure.mongodb.mongodb import books_collection
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 # Initialize Redis and RabbitMQ connections
-redis = Redis(host="localhost", port=6379, db=0)
+redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB2)
 mq_connection = BlockingConnection(ConnectionParameters("localhost"))
+
 
 # Dependency to inject BookService
 def get_book_service():
     return BookService(cache=redis, mq_connection=mq_connection)
 
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 # @permission_required(allowed_roles=["admin"])
 async def create_book(
     book_data: BookCreate,
-    # token: str = Depends(oauth2_scheme),
-    book_service: BookService = Depends(BookService),
+    book_service: BookService = Depends(get_book_service),
     uow: UnitOfWork = Depends(get_uow),
 ):
     async with uow:
@@ -39,11 +39,12 @@ async def create_book(
 @router.get("/{book_id}", response_model=BookOut)
 async def get_book(
     book_id: int,
-    book_service: BookService = Depends(BookService),
+    book_service: BookService = Depends(get_book_service),
     uow: UnitOfWork = Depends(get_uow),
 ):
     async with uow:
         return await book_service.get_item(book_id, uow)
+
 
 @router.get("/search", response_model=list[BookOut])
 async def search_books(
@@ -51,16 +52,22 @@ async def search_books(
     skip: int = 0,
     limit: int = 100,
 ):
-    
+
     # Create a text index on the 'title' and 'description' fields
     books_collection.create_index([("title", "text"), ("description", "text")])
-    
-    results = books_collection.find(
-        {"$text": {"$search": query}},
-        {"score": {"$meta": "textScore"}},
-    ).sort([("score", {"$meta": "textScore"})]).skip(skip).limit(limit)
+
+    results = (
+        books_collection.find(
+            {"$text": {"$search": query}},
+            {"score": {"$meta": "textScore"}},
+        )
+        .sort([("score", {"$meta": "textScore"})])
+        .skip(skip)
+        .limit(limit)
+    )
 
     return [BookOut(**book) for book in results]
+
 
 @router.get("/", response_model=list[BookOut])
 async def get_all_books(
@@ -70,7 +77,7 @@ async def get_all_books(
     uow: UnitOfWork = Depends(get_uow),
 ):
     async with uow:
-        book_service = BookService()
+        book_service = get_book_service()
         return await book_service.get_items(uow, skip, limit)
 
 
@@ -79,8 +86,7 @@ async def get_all_books(
 async def update_book(
     book_id: int,
     update_data: BookUpdate,
-    # token: str = Depends(oauth2_scheme),
-    book_service: BookService = Depends(BookService),
+    book_service: BookService = Depends(get_book_service),
     uow: UnitOfWork = Depends(get_uow),
 ):
     async with uow:
@@ -93,8 +99,7 @@ async def update_book(
 # @permission_required(allowed_roles=["admin", "author"])
 async def delete_book(
     book_id: int,
-    # token: str = Depends(oauth2_scheme),
-    book_service: BookService = Depends(BookService),
+    book_service: BookService = Depends(get_book_service),
     uow: UnitOfWork = Depends(get_uow),
 ):
     async with uow:

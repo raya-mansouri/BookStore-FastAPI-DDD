@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB0: int = 0
     REDIS_DB1: int = 1
+    REDIS_DB2: int = 2
+
 
     POSTGRES_USER: str = "raya"
     POSTGRES_PASSWORD: int = 1234
