@@ -1,6 +1,7 @@
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from app.db.unit_of_work import UnitOfWork, get_uow
+from app.permissions import permission_required
 from app.user.domain.entities import (
     LoginStep1Request,
     LoginStep2Request,
@@ -40,9 +41,19 @@ async def login_step2(
 ):
     return await auth_service.login_step2(otp_data, uow)
 
+@router.post("/logout")
+@permission_required(allowed_roles=["admin"])
+async def logout(
+    response: Response, 
+    request: Request):
+    if "access_token" not in request.cookies:
+        raise HTTPException(status_code=400, detail="No token in cookies")
+
+    response.delete_cookie("access_token")
+    return {"message": "Token removed from cookies"}
 
 @router.get("/{id}", response_model=UserOut)
-async def get_customer(
+async def get_user(
     id: int,
     auth_service: AuthService = Depends(AuthService),
     uow: UnitOfWork = Depends(get_uow),
@@ -51,7 +62,7 @@ async def get_customer(
 
 
 @router.get("/", response_model=List[UserOut])
-async def get_customers(
+async def get_users(
     auth_service: AuthService = Depends(AuthService),
     uow: UnitOfWork = Depends(get_uow),
 ):
@@ -59,17 +70,17 @@ async def get_customers(
 
 
 @router.patch("/{id}", response_model=UserOut)
-async def update_customer(
+async def update_user(
     id: int,
-    customer: UserUpdate,
+    user: UserUpdate,
     auth_service: AuthService = Depends(AuthService),
     uow: UnitOfWork = Depends(get_uow),
 ):
-    return await auth_service.update_item(id, customer, uow)
+    return await auth_service.update_item(id, user, uow)
 
 
 @router.delete("/{id}")
-async def delete_customer(
+async def delete_user(
     id: int,
     auth_service: AuthService = Depends(AuthService),
     uow: UnitOfWork = Depends(get_uow),
